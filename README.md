@@ -9,6 +9,9 @@ As with most technical things such as tests its important to have fun in the pro
 The deployment process is pretty straight forward. I ended getting lost in the automation though the point of this is to ensure a correct understanding regarding things. 
 It may have taken a little longer than expected but it help outline my working style and what I generally intel. It took in toal no more than few days. The exact number can be discussed later if required.
 
+
+I am by no means a golang expert
+
 ## Deployment porcess
 
 ### Dont use cloud shell run it locally
