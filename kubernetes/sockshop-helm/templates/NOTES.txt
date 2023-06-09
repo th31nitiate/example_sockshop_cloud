@@ -1,0 +1,1 @@
+This service has now been deployed into the following namespace: {{ .Values.global.namespace }}

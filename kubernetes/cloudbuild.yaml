@@ -1,0 +1,121 @@
+steps:
+# Ensure to add allow failure were required
+- name: "gcr.io/cloud-builders/kubectl"
+  allowFailure: true
+  args:
+  - create
+  - serviceaccount
+  - --namespace=kube-system
+  - tiller
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: "gcr.io/cloud-builders/kubectl"
+  allowFailure: true
+  args:
+  - create
+  - clusterrolebinding
+  - tiller-cluster-rule
+  - --clusterrole=cluster-admin
+  - --serviceaccount=kube-system:tiller
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: "gcr.io/cloud-builders/kubectl"
+  allowFailure: true
+  args:
+  - create
+  - clusterrolebinding
+  - client-cluster-rule
+  - --clusterrole=cluster-admin
+  - --user=client
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+#- name: "gcr.io/cloud-builders/kubectl"
+#  script: |
+#    #!/usr/bin/env bash
+#    gcloud container clusters get-credentials --project="$GCLOUD_PROJECT" --region="$CLOUDSDK_COMPUTE_REGION" "$CLOUDSDK_CONTAINER_CLUSTER"
+#    while true; do
+#        echo "Checking docker container" $LOCATION-docker.pkg.dev/$PROJECT_ID/monitoring/tiller
+#        gcloud artifacts docker images describe $LOCATION-docker.pkg.dev/$PROJECT_ID/monitoring/tiller #2>/dev/null
+#        if [[ $? == 0 ]]; then
+#            echo "Docker container ready container to be ready"
+#            exit 0
+#            break # The break  here is just fail safe thought not required
+#        fi
+#        echo "Docker container still not ready"
+#        sleep 30
+#    done
+  env:
+  - 'PROJECT_ID=$PROJECT_ID'
+  - 'LOCATION=$LOCATION'
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: '$LOCATION-docker.pkg.dev/$PROJECT_ID/monitoring/tiller'
+  entrypoint: '/helm.bash'
+  args: ['init', '--tiller-image', '$LOCATION-docker.pkg.dev/$PROJECT_ID/monitoring/tiller', '--skip-refresh', '--service-account', 'tiller']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: "gcr.io/cloud-builders/kubectl"
+  args:
+  - wait
+  - --for=condition=ready
+  - pod
+  - -l
+  - name=tiller
+  - --namespace=kube-system
+  - --timeout=300s
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: '$LOCATION-docker.pkg.dev/$PROJECT_ID/monitoring/tiller'
+  entrypoint: '/helm.bash'
+  args: ['install', '--name', 'promtest', 'cloudorg-prom-stack', '-f', 'monitoring.yaml', '--debug']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: '$LOCATION-docker.pkg.dev/$PROJECT_ID/monitoring/tiller'
+  entrypoint: '/helm.bash'
+  args: ['install', '--name', 'sockshop', 'sockshop-helm', '-f', 'sockshop.yaml', '--debug']
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: "gcr.io/cloud-builders/kubectl"
+  args:
+  - apply
+  - --filename=loadtest/loadtest-dep.yaml
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: "gcr.io/cloud-builders/gcloud"
+  args:
+  - pubsub
+  - topics
+  - publish
+  - '$PROJECT_ID-topic-funcation'
+  - '--message="SVC_DEPLOYED'
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$LOCATION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+  - 'HOME=/tmp'
+  - 'GCLOUD_PROJECT=$PROJECT_ID'

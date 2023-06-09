@@ -1,0 +1,40 @@
+global:
+    registry: '<<Add your container repo here>>/monitoring'
+    namespace: 'monitoring'
+    domain: 'foo.org'
+
+prometheus:
+    image:
+        repo: prometheus
+        tag: v2.26.0
+    resources:
+        limits:
+          cpu: 200m
+          memory: 500Mi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+
+grafana:
+    image:
+        repo: grafana
+        tag: 7.5.5
+    resources:
+        limits:
+          cpu: 200m
+          memory: 500Mi
+        requests:
+          cpu: 100m
+          memory: 200Mi
+
+node_exporter:
+    image:
+        repo: node-exporter
+        tag: v1.1.2
+    resources:
+        limits:
+          cpu: 200m
+          memory: 500Mi
+        requests:
+          cpu: 100m
+          memory: 200Mi

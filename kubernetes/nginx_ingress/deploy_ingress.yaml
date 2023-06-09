@@ -1,0 +1,27 @@
+steps:
+# _Permmision are too broad here and they can be further refined
+- name: "gcr.io/cloud-builders/kubectl"
+  args:
+  - create
+  - clusterrolebinding
+  - cluster-admin-binding
+  - --clusterrole=cluster-admin
+  - --user=universal@o3h.re
+  allowFailure: true
+  env:
+    - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+    - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+    - 'HOME=/tmp'
+    - 'GCLOUD_PROJECT=$PROJECT_ID'
+- name: "gcr.io/cloud-builders/gke-deploy"
+  args:
+  - run
+  - --filename=kubernetes/nginx_ingress/deploy.yaml
+  - '--location=us-central1'
+  - '--cluster=$PROJECT_ID-cluster'
+  allowFailure: true
+  env:
+    - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+    - 'CLOUDSDK_CONTAINER_CLUSTER=$PROJECT_ID-cluster'
+    - 'HOME=/tmp'
+    - 'GCLOUD_PROJECT=$PROJECT_ID'

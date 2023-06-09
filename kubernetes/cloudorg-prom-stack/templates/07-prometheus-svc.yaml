@@ -1,0 +1,38 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: 'true'
+  labels:
+    name: prometheus
+  name: prometheus
+  namespace: {{ .Values.global.namespace }}
+spec:
+  selector:
+    app: prometheus
+  type: ClusterIP
+  ports:
+  - name: prometheus
+    protocol: TCP
+    port: 80
+    targetPort: 9090
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ingress-prometheus
+  namespace: {{ .Values.global.namespace }}
+spec:
+  rules:
+  - host: prometheus.{{ .Values.global.domain }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus
+            port:
+              number: 80
+  ingressClassName: nginx
+
